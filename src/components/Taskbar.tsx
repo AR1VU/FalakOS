@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Calculator, FileText, Folder, Home, Settings, User, Moon, Sun } from 'lucide-react';
 import { useWindows } from '../context/WindowContext';
 import { useTheme } from '../context/ThemeContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const Taskbar: React.FC = () => {
   const { openWindow, windows, updateWindow } = useWindows();
   const { theme, toggleTheme } = useTheme();
+  const { addNotification } = useNotifications();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hoveredApp, setHoveredApp] = useState<string | null>(null);
   const [clickedApp, setClickedApp] = useState<string | null>(null);
@@ -58,9 +60,19 @@ const Taskbar: React.FC = () => {
     if (existingWindow && existingWindow.isMinimized) {
       // Restore minimized window
       updateWindow(existingWindow.id, { isMinimized: false });
+      addNotification({
+        title: `${app.name} Restored`,
+        message: `${app.name} window has been restored from taskbar`,
+        type: 'info'
+      });
     } else if (!existingWindow) {
       // Open new window
       openWindow(app.id, app.name, <div>App content for {app.name}</div>);
+      addNotification({
+        title: `${app.name} Opened`,
+        message: `${app.name} application has been launched successfully`,
+        type: 'success'
+      });
     }
   };
 

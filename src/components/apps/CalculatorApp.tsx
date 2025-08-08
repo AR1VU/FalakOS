@@ -192,7 +192,6 @@ const CalculatorApp: React.FC = () => {
         {/* Fifth Row */}
         <Button
           onClick={() => inputNumber('0')}
-          className="col-span-2"
         >
           0
         </Button>
@@ -203,6 +202,9 @@ const CalculatorApp: React.FC = () => {
         >
           =
         </Button>
+        
+        {/* Empty cell to maintain grid */}
+        <div></div>
       </div>
     </div>
   );

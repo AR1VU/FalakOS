@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Bell, Wifi, Battery, Volume2 } from 'lucide-react';
+import { Moon, Sun, Bell, Wifi, Battery, Volume2, User } from 'lucide-react';
 import Desktop from './components/Desktop';
 import Taskbar from './components/Taskbar';
 import WindowManager from './components/WindowManager';
 import NotificationPanel from './components/NotificationPanel';
+import UserProfilePanel from './components/UserProfilePanel';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { WindowProvider } from './context/WindowContext';
+import { NotificationProvider, useNotifications } from './context/NotificationContext';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
+  const { unreadCount } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
   return (
     <WindowProvider>
@@ -46,18 +50,31 @@ function AppContent() {
             {/* Notifications */}
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-3 bg-white/10 dark:bg-black/20 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 dark:hover:bg-black/30 transition-all duration-300 hover:scale-105 relative"
+              className="relative p-3 bg-white/10 dark:bg-black/20 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 dark:hover:bg-black/30 transition-all duration-300 hover:scale-105"
             >
               <Bell className="w-5 h-5 text-white/80" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse px-1">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
             
             {/* User Avatar */}
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full border-2 border-white/30 hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden">
+            <button
+              onClick={() => setShowUserProfile(!showUserProfile)}
+              className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full border-2 border-white/30 hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden relative group"
+            >
               <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm">
                 F
               </div>
-            </div>
+              <div className="absolute inset-0 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              {/* Online status indicator */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white shadow-sm">
+                <div className="w-full h-full bg-green-400 rounded-full animate-ping" />
+              </div>
+            </button>
           </div>
         </div>
         
@@ -69,6 +86,9 @@ function AppContent() {
         
         {/* Notification Panel */}
         <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
+        
+        {/* User Profile Panel */}
+        <UserProfilePanel isOpen={showUserProfile} onClose={() => setShowUserProfile(false)} />
       </div>
     </WindowProvider>
   );
@@ -77,7 +97,11 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <NotificationProvider>
+        <WindowProvider>
+          <AppContent />
+        </WindowProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

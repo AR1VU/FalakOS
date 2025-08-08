@@ -35,7 +35,12 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
   const snapToGrid = (value: number) => Math.round(value / GRID_SIZE) * GRID_SIZE;
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.target !== e.currentTarget && !(e.target as HTMLElement).closest('.window-header')) {
+    // Only allow dragging from the header area, but exclude buttons
+    const target = e.target as HTMLElement;
+    const isButton = target.tagName === 'BUTTON' || target.closest('button');
+    const isInHeader = target.closest('.window-header');
+    
+    if (!isInHeader || isButton) {
       return;
     }
     
@@ -222,17 +227,23 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
         
         {/* Pixel-art inspired header */}
         <div
-          className={`window-header flex items-center justify-between p-5 border-b cursor-grab active:cursor-grabbing transition-all duration-200 backdrop-blur-sm ${
+          className={`window-header flex items-center justify-between p-5 border-b transition-all duration-200 backdrop-blur-sm ${
             isDragging ? 'border-purple-400/40 bg-purple-500/10' : 'border-white/10 bg-white/5'
           }`}
-          onMouseDown={handleMouseDown}
         >
-          <div className="flex items-center gap-4 pointer-events-none">
-            
+          <div 
+            className="flex items-center gap-4 cursor-grab active:cursor-grabbing flex-1"
+            onMouseDown={handleMouseDown}
+          >
+            <div className="flex gap-2">
+              <div className="w-3 h-3 bg-red-400/80 rounded-full backdrop-blur-sm"></div>
+              <div className="w-3 h-3 bg-yellow-400/80 rounded-full backdrop-blur-sm"></div>
+              <div className="w-3 h-3 bg-green-400/80 rounded-full backdrop-blur-sm"></div>
+            </div>
             <h2 className="text-white font-semibold text-lg">{window.title}</h2>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pointer-events-auto">
             <button
               onClick={handleMinimize}
               className="w-8 h-8 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 border border-yellow-400/30 backdrop-blur-sm"
