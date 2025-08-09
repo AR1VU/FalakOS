@@ -8,14 +8,39 @@ interface UserProfilePanelProps {
 }
 
 const UserProfilePanel: React.FC<UserProfilePanelProps> = ({ isOpen, onClose }) => {
-  const { theme, toggleTheme } = useTheme();
-  const [selectedWallpaper, setSelectedWallpaper] = useState('gradient');
+  const { theme, wallpaper, toggleTheme, setWallpaper } = useTheme();
 
   const wallpapers = [
-    { id: 'gradient', name: 'Cosmic Gradient', preview: 'from-purple-400 via-pink-300 to-cyan-300' },
-    { id: 'neon', name: 'Neon Dreams', preview: 'from-pink-500 via-purple-500 to-indigo-500' },
-    { id: 'sunset', name: 'Digital Sunset', preview: 'from-orange-400 via-red-400 to-pink-400' },
-    { id: 'ocean', name: 'Cyber Ocean', preview: 'from-blue-400 via-cyan-400 to-teal-400' },
+    { 
+      id: 'soft-pastel' as const, 
+      name: 'Soft Pastel', 
+      preview: theme === 'light' ? 'from-pink-200 via-purple-200 to-cyan-200' : 'from-pink-900 via-purple-900 to-cyan-900'
+    },
+    { 
+      id: 'cosmic-dreams' as const, 
+      name: 'Cosmic Dreams', 
+      preview: theme === 'light' ? 'from-indigo-300 via-purple-300 to-pink-300' : 'from-indigo-900 via-purple-900 to-pink-900'
+    },
+    { 
+      id: 'digital-sunset' as const, 
+      name: 'Digital Sunset', 
+      preview: theme === 'light' ? 'from-orange-300 via-red-300 to-pink-300' : 'from-orange-900 via-red-900 to-pink-900'
+    },
+    { 
+      id: 'cyber-ocean' as const, 
+      name: 'Cyber Ocean', 
+      preview: theme === 'light' ? 'from-blue-300 via-cyan-300 to-teal-300' : 'from-blue-900 via-cyan-900 to-teal-900'
+    },
+    { 
+      id: 'digital-forest' as const, 
+      name: 'Digital Forest', 
+      preview: theme === 'light' ? 'from-green-300 via-emerald-300 to-teal-300' : 'from-green-900 via-emerald-900 to-teal-900'
+    },
+    { 
+      id: 'aurora-borealis' as const, 
+      name: 'Aurora Borealis', 
+      preview: theme === 'light' ? 'from-purple-300 via-green-300 to-blue-300' : 'from-purple-900 via-green-900 to-blue-900'
+    },
   ];
 
   return (
@@ -102,23 +127,23 @@ const UserProfilePanel: React.FC<UserProfilePanelProps> = ({ isOpen, onClose }) 
               <span className="text-white font-medium text-sm">Wallpaper</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {wallpapers.map((wallpaper) => (
+              {wallpapers.map((wp) => (
                 <button
-                  key={wallpaper.id}
-                  onClick={() => setSelectedWallpaper(wallpaper.id)}
+                  key={wp.id}
+                  onClick={() => setWallpaper(wp.id)}
                   className={`relative h-16 rounded-xl overflow-hidden transition-all duration-200 hover:scale-105 ${
-                    selectedWallpaper === wallpaper.id
+                    wallpaper === wp.id
                       ? 'ring-2 ring-white/40 ring-offset-2 ring-offset-transparent'
                       : ''
                   }`}
                 >
-                  <div className={`w-full h-full bg-gradient-to-br ${wallpaper.preview}`} />
+                  <div className={`w-full h-full bg-gradient-to-br ${wp.preview} transition-all duration-300`} />
                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                     <span className="text-white text-xs font-medium text-center px-2">
-                      {wallpaper.name}
+                      {wp.name}
                     </span>
                   </div>
-                  {selectedWallpaper === wallpaper.id && (
+                  {wallpaper === wp.id && (
                     <div className="absolute top-1 right-1 w-3 h-3 bg-white rounded-full shadow-lg" />
                   )}
                 </button>
