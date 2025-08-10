@@ -14,7 +14,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [wallpaper, setWallpaperState] = useState<Wallpaper>('soft-pastel');
+  const [wallpaper, setWallpaperState] = useState<Wallpaper>('cyber-ocean');
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('falacos-theme') as Theme;
@@ -24,6 +24,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     if (savedWallpaper) {
       setWallpaperState(savedWallpaper);
+    } else {
+      // Set default wallpaper to cyber-ocean if none saved
+      setWallpaperState('cyber-ocean');
     }
   }, []);
 

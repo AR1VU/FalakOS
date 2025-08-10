@@ -40,7 +40,7 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
     const isButton = target.tagName === 'BUTTON' || target.closest('button');
     const isInHeader = target.closest('.window-header');
     
-    if (!isInHeader || isButton) {
+    if (isButton) {
       return;
     }
     
@@ -50,8 +50,8 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
     const rect = windowRef.current?.getBoundingClientRect();
     if (rect) {
       setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: e.clientX - window.position.x,
+        y: e.clientY - window.position.y,
       });
     }
     
@@ -79,8 +79,8 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
     if (isDragging) {
       e.preventDefault();
       
-      const newX = snapToGrid(Math.max(0, Math.min(window.innerWidth - 300, e.clientX - dragOffset.x)));
-      const newY = snapToGrid(Math.max(0, Math.min(window.innerHeight - 200, e.clientY - dragOffset.y)));
+      const newX = snapToGrid(Math.max(0, Math.min(window.innerWidth - window.size.width, e.clientX - dragOffset.x)));
+      const newY = snapToGrid(Math.max(0, Math.min(window.innerHeight - window.size.height - 120, e.clientY - dragOffset.y)));
       
       updateWindow(window.id, {
         position: { x: newX, y: newY }
@@ -122,7 +122,7 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
         position: { x: newX, y: newY }
       });
     }
-  }, [isDragging, isResizing, dragOffset, resizeStart, resizeDirection, window.id, window.position, updateWindow]);
+  }, [isDragging, isResizing, dragOffset, resizeStart, resizeDirection, window.id, window.position, window.size, updateWindow]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -229,12 +229,10 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
         <div
           className={`window-header flex items-center justify-between p-5 border-b transition-all duration-200 backdrop-blur-sm ${
             isDragging ? 'border-purple-400/40 bg-purple-500/10' : 'border-white/10 bg-white/5'
-          }`}
+          } cursor-grab active:cursor-grabbing`}
+          onMouseDown={handleMouseDown}
         >
-          <div 
-            className="flex items-center gap-4 cursor-grab active:cursor-grabbing flex-1"
-            onMouseDown={handleMouseDown}
-          >
+          <div className="flex items-center gap-4 flex-1 pointer-events-none">
             <div className="flex gap-2">
               <div className="w-3 h-3 bg-red-400/80 rounded-full backdrop-blur-sm"></div>
               <div className="w-3 h-3 bg-yellow-400/80 rounded-full backdrop-blur-sm"></div>
@@ -243,7 +241,7 @@ const Window: React.FC<WindowProps> = ({ window, zIndex }) => {
             <h2 className="text-white font-semibold text-lg">{window.title}</h2>
           </div>
           
-          <div className="flex items-center gap-2 pointer-events-auto">
+          <div className="flex items-center gap-2 pointer-events-auto relative z-10">
             <button
               onClick={handleMinimize}
               className="w-8 h-8 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 border border-yellow-400/30 backdrop-blur-sm"
