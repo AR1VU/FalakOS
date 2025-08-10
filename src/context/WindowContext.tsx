@@ -1,100 +1,154 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-interface Window {
+interface WindowState {
   id: string;
   title: string;
   content: React.ReactNode;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   isMinimized: boolean;
   isMaximized: boolean;
-  isAnimating: boolean;
   zIndex: number;
 }
 
 interface WindowContextType {
-  windows: Window[];
-  openWindow: (id: string, title: string, content: React.ReactNode) => void;
+  windows: WindowState[];
+  createWindow: (id: string, title: string, content: React.ReactNode) => void;
   closeWindow: (id: string) => void;
-  updateWindow: (id: string, updates: Partial<Window>) => void;
+  setWindowPosition: (id: string, x: number, y: number) => void;
+  setWindowSize: (id: string, width: number, height: number) => void;
+  minimizeWindow: (id: string) => void;
+  maximizeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
+  // Legacy methods for compatibility
+  openWindow: (id: string, title: string, content: React.ReactNode) => void;
+  updateWindow: (id: string, updates: Partial<WindowState>) => void;
 }
 
-const WindowContext = createContext<WindowContextType | undefined>(undefined);
+const WindowContext = createContext<WindowContextType | null>(null);
 
-export const WindowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [windows, setWindows] = useState<Window[]>([]);
-  const [nextZIndex, setNextZIndex] = useState(100);
+export function WindowProvider({ children }: { children: React.ReactNode }) {
+  const [windows, setWindows] = useState<WindowState[]>([]);
+  const [highestZ, setHighestZ] = useState(100);
 
-  const openWindow = useCallback((id: string, title: string, content: React.ReactNode) => {
-    const existingWindow = windows.find(w => w.id === id);
-    
-    if (existingWindow) {
-      // Focus existing window and restore if minimized
-      setWindows(prev => 
-        prev.map(w => 
-          w.id === id 
-            ? { ...w, isMinimized: false, zIndex: nextZIndex }
-            : w
-        )
-      );
-      setNextZIndex(prev => prev + 1);
+  const createWindow = (id: string, title: string, content: React.ReactNode) => {
+    const existing = windows.find(w => w.id === id);
+    if (existing) {
+      if (existing.isMinimized) {
+        setWindows(prev => prev.map(w => 
+          w.id === id ? { ...w, isMinimized: false, zIndex: highestZ + 1 } : w
+        ));
+        setHighestZ(prev => prev + 1);
+      }
       return;
     }
 
-    const newWindow: Window = {
+    const newWindow: WindowState = {
       id,
       title,
       content,
-      position: { 
-        x: Math.round((100 + Math.random() * 200) / 20) * 20, 
-        y: Math.round((100 + Math.random() * 100) / 20) * 20 
-      },
-      size: { width: 800, height: 600 },
+      x: 100 + Math.random() * 400,
+      y: 100 + Math.random() * 200,
+      width: 800,
+      height: 600,
       isMinimized: false,
       isMaximized: false,
-      isAnimating: false,
-      zIndex: nextZIndex,
+      zIndex: highestZ + 1
     };
 
     setWindows(prev => [...prev, newWindow]);
-    setNextZIndex(prev => prev + 1);
-  }, [windows, nextZIndex]);
+    setHighestZ(prev => prev + 1);
+  };
 
-  const closeWindow = useCallback((id: string) => {
+  const closeWindow = (id: string) => {
     setWindows(prev => prev.filter(w => w.id !== id));
-  }, []);
+  };
 
-  const updateWindow = useCallback((id: string, updates: Partial<Window>) => {
-    setWindows(prev =>
-      prev.map(w => (w.id === id ? { ...w, ...updates } : w))
-    );
-  }, []);
+  const setWindowPosition = (id: string, x: number, y: number) => {
+    setWindows(prev => prev.map(w => 
+      w.id === id ? { ...w, x, y } : w
+    ));
+  };
 
-  const focusWindow = useCallback((id: string) => {
-    setWindows(prev =>
-      prev.map(w => (w.id === id ? { ...w, zIndex: nextZIndex } : w))
-    );
-    setNextZIndex(prev => prev + 1);
-  }, [nextZIndex]);
+  const setWindowSize = (id: string, width: number, height: number) => {
+    setWindows(prev => prev.map(w => 
+      w.id === id ? { ...w, width, height } : w
+    ));
+  };
+
+  const minimizeWindow = (id: string) => {
+    setWindows(prev => prev.map(w => 
+      w.id === id ? { ...w, isMinimized: true } : w
+    ));
+  };
+
+  const maximizeWindow = (id: string) => {
+    setWindows(prev => prev.map(w => {
+      if (w.id === id) {
+        if (w.isMaximized) {
+          return {
+            ...w,
+            isMaximized: false,
+            x: 100 + Math.random() * 300,
+            y: 100 + Math.random() * 200,
+            width: 800,
+            height: 600
+          };
+        } else {
+          return {
+            ...w,
+            isMaximized: true,
+            x: 0,
+            y: 0,
+            width: window.innerWidth,
+            height: window.innerHeight
+          };
+        }
+      }
+      return w;
+    }));
+  };
+
+  const focusWindow = (id: string) => {
+    setWindows(prev => prev.map(w => 
+      w.id === id ? { ...w, zIndex: highestZ + 1 } : w
+    ));
+    setHighestZ(prev => prev + 1);
+  };
+
+  // Legacy methods for compatibility
+  const openWindow = createWindow;
+  
+  const updateWindow = (id: string, updates: Partial<WindowState>) => {
+    setWindows(prev => prev.map(w => 
+      w.id === id ? { ...w, ...updates } : w
+    ));
+  };
 
   return (
     <WindowContext.Provider value={{
       windows,
-      openWindow,
+      createWindow,
       closeWindow,
-      updateWindow,
+      setWindowPosition,
+      setWindowSize,
+      minimizeWindow,
+      maximizeWindow,
       focusWindow,
+      openWindow,
+      updateWindow
     }}>
       {children}
     </WindowContext.Provider>
   );
-};
+}
 
-export const useWindows = () => {
+export function useWindows() {
   const context = useContext(WindowContext);
-  if (context === undefined) {
-    throw new Error('useWindows must be used within a WindowProvider');
+  if (!context) {
+    throw new Error('useWindows must be used within WindowProvider');
   }
   return context;
-};
+}

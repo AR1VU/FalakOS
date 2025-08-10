@@ -6,27 +6,36 @@ import WindowManager from './components/WindowManager';
 import NotificationPanel from './components/NotificationPanel';
 import UserProfilePanel from './components/UserProfilePanel';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
-import { WindowProvider } from './context/WindowContext';
+import { WindowProvider, useWindows } from './context/WindowContext';
 import { NotificationProvider, useNotifications } from './context/NotificationContext';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useNotifications();
+  const { windows } = useWindows();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
+  // Check if any window is maximized
+  const hasMaximizedWindow = windows.some(w => w.isMaximized && !w.isMinimized);
+
+  // Close panels when entering fullscreen
+  React.useEffect(() => {
+    if (hasMaximizedWindow) {
+      setShowNotifications(false);
+      setShowUserProfile(false);
+    }
+  }, [hasMaximizedWindow]);
+
   return (
-    <WindowProvider>
-      <div className={`min-h-screen transition-all duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
-        {/* Desktop Background */}
-        <Desktop />
-        
-        {/* Top Bar */}
+    <div className={`min-h-screen transition-all duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
+      <Desktop />
+      
+      {/* Top Bar - Completely hidden when windows are maximized */}
+      {!hasMaximizedWindow && (
         <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4">
-          {/* Left side - empty for now */}
           <div></div>
           
-          {/* Right side - Controls */}
           <div className="flex items-center gap-3">
             {/* System Status */}
             <div className="flex items-center gap-2 px-4 py-2 bg-white/10 dark:bg-black/20 backdrop-blur-md rounded-full border border-white/20">
@@ -77,20 +86,22 @@ function AppContent() {
             </button>
           </div>
         </div>
-        
-        {/* Window Manager */}
-        <WindowManager />
-        
-        {/* Taskbar */}
-        <Taskbar />
-        
-        {/* Notification Panel */}
-        <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
-        
-        {/* User Profile Panel */}
-        <UserProfilePanel isOpen={showUserProfile} onClose={() => setShowUserProfile(false)} />
-      </div>
-    </WindowProvider>
+      )}
+      
+      {/* Window Manager */}
+      <WindowManager />
+      
+      {/* Taskbar */}
+      <Taskbar />
+      
+      {/* Panels - Only show when not in fullscreen */}
+      {!hasMaximizedWindow && (
+        <>
+          <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
+          <UserProfilePanel isOpen={showUserProfile} onClose={() => setShowUserProfile(false)} />
+        </>
+      )}
+    </div>
   );
 }
 

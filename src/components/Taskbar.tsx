@@ -5,12 +5,16 @@ import { useTheme } from '../context/ThemeContext';
 import { useNotifications } from '../context/NotificationContext';
 
 const Taskbar: React.FC = () => {
-  const { openWindow, windows, updateWindow } = useWindows();
+  const { createWindow, windows } = useWindows();
   const { theme, toggleTheme } = useTheme();
   const { addNotification } = useNotifications();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hoveredApp, setHoveredApp] = useState<string | null>(null);
   const [clickedApp, setClickedApp] = useState<string | null>(null);
+  const [isTaskbarVisible, setIsTaskbarVisible] = useState(true);
+
+  // Check if any window is maximized
+  const hasMaximizedWindow = windows.some(w => w.isMaximized && !w.isMinimized);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -18,6 +22,34 @@ const Taskbar: React.FC = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Auto-hide taskbar when window is maximized
+  useEffect(() => {
+    if (hasMaximizedWindow) {
+      setIsTaskbarVisible(false);
+    } else {
+      setIsTaskbarVisible(true);
+    }
+  }, [hasMaximizedWindow]);
+
+  // Show taskbar on mouse hover near bottom
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (hasMaximizedWindow) {
+        const bottomThreshold = window.innerHeight - 50;
+        if (e.clientY > bottomThreshold) {
+          setIsTaskbarVisible(true);
+        } else if (e.clientY < bottomThreshold - 100) {
+          setIsTaskbarVisible(false);
+        }
+      }
+    };
+
+    if (hasMaximizedWindow) {
+      document.addEventListener('mousemove', handleMouseMove);
+      return () => document.removeEventListener('mousemove', handleMouseMove);
+    }
+  }, [hasMaximizedWindow]);
 
   const apps = [
     { 
@@ -53,27 +85,15 @@ const Taskbar: React.FC = () => {
   const handleAppClick = (app: any) => {
     setClickedApp(app.id);
     
-    // Remove click animation after animation completes
     setTimeout(() => setClickedApp(null), 200);
     
-    const existingWindow = windows.find(w => w.id.includes(app.id));
-    if (existingWindow && existingWindow.isMinimized) {
-      // Restore minimized window
-      updateWindow(existingWindow.id, { isMinimized: false });
-      addNotification({
-        title: `${app.name} Restored`,
-        message: `${app.name} window has been restored from taskbar`,
-        type: 'info'
-      });
-    } else if (!existingWindow) {
-      // Open new window
-      openWindow(app.id, app.name, <div>App content for {app.name}</div>);
-      addNotification({
-        title: `${app.name} Opened`,
-        message: `${app.name} application has been launched successfully`,
-        type: 'success'
-      });
-    }
+    createWindow(app.id, app.name, <div>App content for {app.name}</div>);
+    
+    addNotification({
+      title: `${app.name} Opened`,
+      message: `${app.name} application has been launched successfully`,
+      type: 'success'
+    });
   };
 
   const formatTime = (date: Date) => {
@@ -95,7 +115,7 @@ const Taskbar: React.FC = () => {
   return (
     <>
       {/* Tooltip */}
-      {hoveredApp && (
+      {hoveredApp && isTaskbarVisible && (
         <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-60 pointer-events-none">
           <div className="bg-black/80 backdrop-blur-md text-white px-3 py-2 rounded-lg text-sm font-medium shadow-lg border border-white/20">
             {apps.find(app => app.id === hoveredApp)?.name}
@@ -107,7 +127,9 @@ const Taskbar: React.FC = () => {
       )}
 
       {/* Main Taskbar */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+      <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ${
+        isTaskbarVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+      }`}>
         <div className="flex items-center gap-6 px-8 py-5 bg-white/10 dark:bg-black/20 backdrop-blur-2xl rounded-[2rem] border border-white/20 shadow-2xl transition-all duration-500 min-w-[600px]">
           
           {/* Left Side - App Icons */}
@@ -223,6 +245,14 @@ const Taskbar: React.FC = () => {
         {/* Subtle glow effect under taskbar */}
         <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent rounded-[2rem] blur-2xl -z-10 scale-110"></div>
       </div>
+
+      {/* Invisible bottom trigger for auto-show */}
+      {hasMaximizedWindow && (
+        <div 
+          className="fixed bottom-0 left-0 right-0 h-2 z-40"
+          onMouseEnter={() => setIsTaskbarVisible(true)}
+        />
+      )}
     </>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Folder, File, Image, Music, Video, ChevronRight, Home, Star, Clock, Trash2, Search, Grid3X3, List, FolderOpen, FileText, Play, Eye, ArrowLeft } from 'lucide-react';
 import { useWindows } from '../../context/WindowContext';
+import NotesApp from './NotesApp';
 
 interface FileItem {
   name: string;
@@ -15,7 +16,7 @@ interface FileItem {
 }
 
 const FilesApp: React.FC = () => {
-  const { openWindow } = useWindows();
+  const { createWindow } = useWindows();
   const [currentPath, setCurrentPath] = useState(['Home']);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
@@ -316,26 +317,26 @@ const FilesApp: React.FC = () => {
       // Open appropriate app based on file extension
       switch (file.extension) {
         case 'txt':
-          openWindow(`text-viewer-${Date.now()}`, `Text Viewer - ${file.name}`, 
+          createWindow(`text-viewer-${Date.now()}`, `Text Viewer - ${file.name}`, 
             <TextViewerApp fileName={file.name} content={file.content || 'File content not available.'} />
           );
           break;
         case 'jpg':
         case 'png':
         case 'gif':
-          openWindow(`image-viewer-${Date.now()}`, `Image Viewer - ${file.name}`, 
+          createWindow(`image-viewer-${Date.now()}`, `Image Viewer - ${file.name}`, 
             <ImageViewerApp fileName={file.name} />
           );
           break;
         case 'mp3':
         case 'wav':
         case 'flac':
-          openWindow(`music-player-${Date.now()}`, `Music Player - ${file.name}`, 
+          createWindow(`music-player-${Date.now()}`, `Music Player - ${file.name}`, 
             <MusicPlayerApp fileName={file.name} />
           );
           break;
         default:
-          openWindow(`file-viewer-${Date.now()}`, `File Viewer - ${file.name}`, 
+          createWindow(`file-viewer-${Date.now()}`, `File Viewer - ${file.name}`, 
             <div className="p-6 text-white">
               <h2 className="text-xl font-semibold mb-4">File: {file.name}</h2>
               <p>File type not supported for preview.</p>
@@ -599,6 +600,14 @@ const FilesApp: React.FC = () => {
 
 // Text Viewer App Component
 const TextViewerApp: React.FC<{ fileName: string; content: string }> = ({ fileName, content }) => {
+  const { createWindow } = useWindows();
+  
+  const openInNotesApp = () => {
+    createWindow(`notes-${Date.now()}`, `Notes - ${fileName}`, 
+      <NotesApp initialNote={{ title: fileName.replace('.txt', ''), content }} />
+    );
+  };
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-xl">
       <div className="p-6 border-b border-white/10 bg-white/5 backdrop-blur-sm">
@@ -609,6 +618,14 @@ const TextViewerApp: React.FC<{ fileName: string; content: string }> = ({ fileNa
           <div>
             <h1 className="text-xl font-semibold text-white">Text Viewer</h1>
             <p className="text-white/60 text-sm font-mono">{fileName}</p>
+          </div>
+          <div className="ml-auto">
+            <button
+              onClick={openInNotesApp}
+              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-2xl transition-all duration-200 hover:scale-105 backdrop-blur-sm border border-blue-400/30 text-sm font-medium"
+            >
+              Edit in Notes
+            </button>
           </div>
         </div>
       </div>
